@@ -20,7 +20,12 @@ while(1):
         sms_timestamp = sms['timestamp']
 
         #find/create/update an existing customer with this customer id
-        customer_object = dbsession.query(Customer).filter_by(msisdn=customer).first()
+        try:
+            customer_object = dbsession.query(Customer).filter_by(msisdn=customer).first()
+        except:
+            time.sleep(0.2)
+            customer_object = dbsession.query(Customer).filter_by(msisdn=customer).first()
+
         if customer_object == None:
             customer_object = Customer(msisdn=customer,status="new")
             dbsession.add(customer_object)
@@ -29,13 +34,22 @@ while(1):
             dbsession.merge(customer_object)
         
         #create a new message object
-        incoming_msg_object = IncomingMessage(customer = customer_object,message = contents, created = sms_timestamp)
+        try:
+            incoming_msg_object = IncomingMessage(customer = customer_object,message = contents, created = sms_timestamp)
+        except:
+            time.sleep(0.2)
+            incoming_msg_object = IncomingMessage(customer = customer_object,message = contents, created = sms_timestamp)
         dbsession.add(incoming_msg_object)
         slow_commit()
         mpc.process_message(incoming_msg_object)
         
     #Check for any messages to be sent out
-    outgoing_msgs = dbsession.query(OutgoingMessage).filter_by(handled=False).all()
+    try:
+        outgoing_msgs = dbsession.query(OutgoingMessage).filter_by(handled=False).all()
+    except:
+        time.sleep(0.2)
+        outgoing_msgs = dbsession.query(OutgoingMessage).filter_by(handled=False).all()
+
     for msg in outgoing_msgs:
         customer_no = msg.customer.msisdn
         msg_text = msg.message

@@ -1,4 +1,4 @@
-import serial, sys, datetime
+import serial, sys, datetime, time
 from numpy import *
 from data_objects import *
 from business_logic_controller import *
@@ -125,7 +125,12 @@ while True:
             blc.process_consumption_report(cobj)
             
             #check db if we need to flip the switch
-            shutoff_cmd = dbsession.query(SwitchCommand).filter_by(handled=False).order_by(desc(SwitchCommand.id)).first()
+            try:
+                shutoff_cmd = dbsession.query(SwitchCommand).filter_by(handled=False).order_by(desc(SwitchCommand.id)).first()
+            except:
+                time.sleep(0.2)
+                shutoff_cmd = dbsession.query(SwitchCommand).filter_by(handled=False).order_by(desc(SwitchCommand.id)).first()
+
             if shutoff_cmd is not None:
                 if shutoff_cmd.command == 'off':
                     switch_off(ser)
