@@ -39,16 +39,16 @@ def readsms(port,a):
         print 'debug:',line
         if line.startswith('BOOT'):
             print 'ignoring crap'
-            continue
+            break
         if line.startswith('MODE'):
             print 'ignoreing crap'
-            continue
+            break
         if line.startswith('^BOOT'):
             print 'ignoring crap'
-            continue
+            break
         if line.startswith('^MODE'):
             print 'ignoreing crap'
-            continue
+            break
 
         if line.startswith('AT+CMGL='):
             inside_cmgl_output = True

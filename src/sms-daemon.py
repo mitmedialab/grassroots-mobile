@@ -31,9 +31,9 @@ while(1):
         #create a new message object
         incoming_msg_object = IncomingMessage(customer = customer_object,message = contents, created = sms_timestamp)
         dbsession.add(incoming_msg_object)
-        mpc.process_message(incoming_msg_object)
         slow_commit()
-
+        mpc.process_message(incoming_msg_object)
+        
     #Check for any messages to be sent out
     outgoing_msgs = dbsession.query(OutgoingMessage).filter_by(handled=False).all()
     for msg in outgoing_msgs:

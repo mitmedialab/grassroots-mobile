@@ -10,7 +10,7 @@ p1 = 0.0732
 p2 = -15.69
 
 #poll db every <> samples
-poll_db_interval = 1000
+poll_db_interval = 400
 sample_count = 0
 energy_consumed = 0.0
 consumed_since_last_report = 0.0
@@ -73,8 +73,10 @@ power_avg = AvgRingArray(1200)
 dbsession = session
 lasttime = None
 
-blc = BusinessLogicController()
+switch_off(ser)
+state = False
 
+blc = BusinessLogicController()
 ms = MeterState(balance=0,action="daemon started")
 session.add(ms)
 slow_commit()
@@ -107,7 +109,21 @@ while True:
         sample_count = (sample_count + 1)%poll_db_interval
 
         if sample_count == 0:
-            print 'power used ', power_avg.value, '\n'
+            print 'power', power_avg.value, '\n'
+            
+            cobj = None
+            if state:
+                cobj = Consumption(total_consumed = energy_consumed,
+                                consumed_since_last_report = consumed_since_last_report)
+            else:
+                cobj = Consumption(total_consumed = 0.0,
+                                   consumed_since_last_report = 0.0)
+            print 'energy_consumed',cobj.total_consumed,'since last report',cobj.consumed_since_last_report
+            dbsession.add(cobj)
+            slow_commit()
+            consumed_since_last_report = 0
+            blc.process_consumption_report(cobj)
+            
             #check db if we need to flip the switch
             shutoff_cmd = dbsession.query(SwitchCommand).filter_by(handled=False).order_by(desc(SwitchCommand.id)).first()
             if shutoff_cmd is not None:
@@ -128,16 +144,7 @@ while True:
                     energy_consumed = 0
                     consumed_since_last_report = 0
                     print 'shuton successfull'
-                    
-            else:
-            #create a new consumed object
-                cobj = Consumption(total_consumed = energy_consumed,
-                                consumed_since_last_report = consumed_since_last_report)
-                dbsession.add(cobj)
-                slow_commit()
-                consumed_since_last_report = 0
-                blc.process_consumption_report(cobj)
-            
+                
         #print 'i',power
         #print '%0.1fwatts'%(power_avg.value)
         
