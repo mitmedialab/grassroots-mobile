@@ -17,7 +17,7 @@ def sendsms(port,number,text):
     #port.readline()
 
     #send send message command
-    command = 'AT+CMGS="%s"\rn'%(number.__str__())
+    command = 'AT+CMGS=%s\r\n'%(number.__str__())
     #print command
     port.write(command)
     port.readline()
@@ -25,10 +25,11 @@ def sendsms(port,number,text):
     
     #send text
     port.write(text)
-    
+    port.write('\r\n')
     #send control-x
     port.write('\x1A')
-    port.readline()
-    #port.readline()
-    #port.readline()
+    print 'SendSMS debug'
+    #print port.readline()
+    #print port.readline()
+    #print port.readline()
 

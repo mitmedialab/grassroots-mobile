@@ -1,4 +1,4 @@
-import serial, sys, time
+import serial, sys, datetime
 from numpy import *
 from data_objects import *
 from business_logic_controller import *
@@ -69,10 +69,15 @@ class AvgRingArray(RingArray):
 current_bias = AvgRingArray(500)
 voltage_bias = AvgRingArray(500)
 power_avg = AvgRingArray(1200)
-dbsession = Session()
-lastttime = None
+#dbsession = Session()
+dbsession = session
+lasttime = None
 
 blc = BusinessLogicController()
+
+ms = MeterState(balance=0,action="daemon started")
+session.add(ms)
+slow_commit()
 
 while True:
     line = ser.readline()
@@ -102,31 +107,34 @@ while True:
         sample_count = (sample_count + 1)%poll_db_interval
 
         if sample_count == 0:
+            print 'power used ', power_avg.value, '\n'
             #check db if we need to flip the switch
-            shutoff_cmd = dbsession.query(ShutoffCommand).filter_by(handled=False).order_by(desc(ShutoffCommand.id)).first()
+            shutoff_cmd = dbsession.query(SwitchCommand).filter_by(handled=False).order_by(desc(SwitchCommand.id)).first()
             if shutoff_cmd is not None:
                 if shutoff_cmd.command == 'off':
                     switch_off(ser)
                     shutoff_cmd.handled = True
                     dbsession.merge(shutoff_cmd)
-                    dbsession.commit()
+                    slow_commit()
                     energy_consumed = 0
                     consumed_since_last_report = 0
+                    print 'shutoff successfull'
 
                 if shutoff_cmd.command == 'on':
                     switch_on(ser)
                     shutoff_cmd.handled = True
                     dbsession.merge(shutoff_cmd)
-                    dbsession.commit()
+                    slow_commit()
                     energy_consumed = 0
                     consumed_since_last_report = 0
+                    print 'shuton successfull'
                     
             else:
             #create a new consumed object
-                cobj = Consumed(total_consumed = energy_consumed,
+                cobj = Consumption(total_consumed = energy_consumed,
                                 consumed_since_last_report = consumed_since_last_report)
                 dbsession.add(cobj)
-                dbsession.commit()
+                slow_commit()
                 consumed_since_last_report = 0
                 blc.process_consumption_report(cobj)
             

@@ -3,15 +3,25 @@ from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import scoped_session, sessionmaker
+import time
 
 db = create_engine('sqlite:///db/sqlite/test.db', echo=False)
 Session = sessionmaker(bind=db)
 Base = declarative_base()
+  
 
 try:
   session
 except NameError:
   session = Session()
+
+
+def slow_commit():
+  try:
+    session.commit()
+  except:
+    time.sleep(0.1)
+    slow_commit()
 
 # balance refers to the total balance for that session
 # rather than the balance remaining.
