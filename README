@@ -1,0 +1,3 @@
+
+#test migrations
+python db/test/manage.py test sqlite:///db/sqlite/test.db --repository db/test
