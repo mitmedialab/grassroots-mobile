@@ -11,7 +11,7 @@ Base = declarative_base()
 class MeterState(Base):
   __tablename__ = 'meter_states'
   id = Column(Integer, primary_key = True)
-  created = Column(TIMESTAMP)
+  created = Column(TIMESTAMP, default=func.now())
   balance = Column(Float)
   action = Column(String(255))
 
@@ -19,7 +19,7 @@ class Customer(Base):
   __tablename__ = 'customers'
   id = Column(Integer, primary_key = True)
   msisdn = Column(String(15))
-  created = Column(TIMESTAMP)
+  created = Column(TIMESTAMP, default=func.now())
   action = Column(String(255))
   status = Column(String(255))
   outgoing_messages = relationship("OutgoingMessage",
@@ -32,7 +32,7 @@ class Customer(Base):
 class MessageTemplate(Base):
   __tablename__ = 'message_templates'
   id = Column(Integer, primary_key = True)
-  created = Column(TIMESTAMP)
+  created = Column(TIMESTAMP, default=func.now())
   text = Column(String(140))
   outgoing_messages = relationship("OutgoingMessage",
                         order_by="desc(MessageTemplate.created)",
@@ -41,7 +41,7 @@ class MessageTemplate(Base):
 class OutgoingMessage(Base):
   __tablename__ = 'outgoing_messages'
   id = Column(Integer, primary_key = True)
-  created = Column(TIMESTAMP)
+  created = Column(TIMESTAMP, default=func.now())
   customer_id = Column(Integer, ForeignKey('customers.id'))
   customer = relationship(Customer, primaryjoin="OutgoingMessage.customer_id == Customer.id")
   handled = Column(Boolean, default = False)
@@ -52,7 +52,7 @@ class OutgoingMessage(Base):
 class Consumption(Base):
   __tablename__ = 'consumption'
   id = Column(Integer, primary_key = True)
-  created = Column(TIMESTAMP)
+  created = Column(TIMESTAMP, default=func.now())
   total_consumed = Column(Float)
   consumed_since_last_report = Column(Float)
   session = Column(Integer)
@@ -60,13 +60,13 @@ class Consumption(Base):
 class ShutoffCommand(Base):
   __tablename__ = 'shutoff_commands'
   id = Column(Integer, primary_key = True)
-  created = Column(TIMESTAMP)
+  created = Column(TIMESTAMP, default=func.now())
   handled = Column(Boolean, default = False)
 
 class IncomingMessage(Base):
   __tablename__ = 'incoming_messages'
   id = Column(Integer, primary_key = True)
-  created = Column(TIMESTAMP)
+  created = Column(TIMESTAMP, default=func.now())
   customer_id = Column(Integer, ForeignKey("customers.id"))
   customer = relationship(Customer,
                           primaryjoin="IncomingMessage.customer_id == Customer.id")
@@ -75,5 +75,5 @@ class IncomingMessage(Base):
 
 
   
-
-#session.query(MeterState).all()
+# session = Session()
+# session.query(MeterState).all()
