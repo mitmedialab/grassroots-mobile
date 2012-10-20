@@ -23,16 +23,19 @@ class Customer(Base):
   action = Column(String(255))
   status = Column(String(255))
   outgoing_messages = relationship("OutgoingMessage",
-                        order_by="desc(created)",
+                        order_by="desc(OutgoingMessage.created)",
                         primaryjoin = "OutgoingMessage.customer_id==Customer.id")
+  incoming_messages = relationship("IncomingMessage",
+                        order_by="desc(IncomingMessage.created)",
+                        primaryjoin = "IncomingMessage.customer_id==Customer.id")
 
 class MessageTemplate(Base):
-  __tablename__ = 'message_template'
+  __tablename__ = 'message_templates'
   id = Column(Integer, primary_key = True)
   created = Column(TIMESTAMP)
   text = Column(String(140))
   outgoing_messages = relationship("OutgoingMessage",
-                        order_by="desc(created)",
+                        order_by="desc(MessageTemplate.created)",
                         primaryjoin = "OutgoingMessage.message_template_id==MessageTemplate.id")
 
 class OutgoingMessage(Base):
@@ -42,7 +45,7 @@ class OutgoingMessage(Base):
   customer_id = Column(Integer, ForeignKey('customers.id'))
   customer = relationship(Customer, primaryjoin="OutgoingMessage.customer_id == Customer.id")
   handled = Column(Boolean, default = False)
-  message_template_id = Column(Integer) #TODO: set up relationships
+  message_template_id = Column(Integer, ForeignKey('message_templates.id')) #TODO: set up relationships
   message_template = relationship(MessageTemplate, 
                        primaryjoin="OutgoingMessage.message_template_id == MessageTemplate.id")
 
@@ -64,7 +67,7 @@ class IncomingMessage(Base):
   __tablename__ = 'incoming_messages'
   id = Column(Integer, primary_key = True)
   created = Column(TIMESTAMP)
-  customer_id = Column(Integer)
+  customer_id = Column(Integer, ForeignKey("customers.id"))
   customer = relationship(Customer,
                           primaryjoin="IncomingMessage.customer_id == Customer.id")
   message = Column(String(255))
