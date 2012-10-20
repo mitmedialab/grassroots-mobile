@@ -1,3 +1,9 @@
 
+# SQL Alchemy Howto From
+# http://sqlalchemy-migrate.readthedocs.org/en/latest/versioning.html
+
+# SQL Alchemy Declarative Mapper info from
+# http://docs.sqlalchemy.org/en/rel_0_7/orm/extensions/declarative.html
+
 #test migrations
 python db/test/manage.py test sqlite:///db/sqlite/test.db --repository db/test

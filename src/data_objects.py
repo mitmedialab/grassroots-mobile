@@ -3,8 +3,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from migrate import *
-
+db = create_engine('sqlite:///db/sqlite/test.db', echo=True)
+Session = sessionmaker(bind=db)
 Base = declarative_base()
 
 class MeterState(Base):
@@ -14,10 +14,4 @@ class MeterState(Base):
   balance = Column(Float)
   action = Column(String(255))
 
-def upgrade(migrate_engine):
-    Base.metadata.bind = migrate_engine
-    MeterState.__table__.create(migrate_engine)
-
-def downgrade(migrate_engine):
-    Base.metadata.bind = migrate_engine
-    MeterState.__table__.drop(migrate_engine)
+#session.query(MeterState).all()
