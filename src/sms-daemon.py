@@ -9,7 +9,7 @@ while(1):
     #Check for any messages to be sent out
 
     #Check for any unread messages
-    smslist = readsms('/dev/ttyUSB1','unread')
+    smslist = readsms('/dev/gsm1','unread')
     for sms in smslist:
         dbsession = Session()
         customer = sms['customer']
