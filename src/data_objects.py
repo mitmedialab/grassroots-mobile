@@ -7,7 +7,11 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 db = create_engine('sqlite:///db/sqlite/test.db', echo=False)
 Session = sessionmaker(bind=db)
 Base = declarative_base()
-session = Session()
+
+try:
+  session
+except NameError:
+  session = Session()
 
 class MeterState(Base):
   __tablename__ = 'meter_states'

@@ -9,17 +9,28 @@ class MessagePipelineController:
   #pipeline items which return "continue" pass through
   #pipeline items which return "halt" halt the queue
   def process_message(self, message):
+
     status = self.confirm_topup_request(message)
+    if status == "halt": return None
+
     status = self.topup_request(message)
+    if status == "halt": return None
+ 
     status = self.process_balance_request(message)
-    return None
+    if status == "halt": return None
+ 
+    status = self.send_intro_instructions(message)
+    if status == "halt": return None
+
+    return True
 
   def topup_request(self, message):
-    credits = self.parse_message_credits(messsage)
+    credits = self.parse_message_credits(message.message)
     if credits == None: return "continue" #not a topup request
+    self.send_message(message.customer, "You have offered to add " + credits + " credits to the power strip. Confirm by sending \"Yes\"")
+    message.customer.status = "topup_offered"
+    session.commit()
     #TODO: Store the proposed credit value somewhere
-    #TODO: Set customer status "topup_offered"
-    #TODO: Send and log Outgoing confirmation message
     return "halt"
 
   def confirm_topup_request(self, message):
@@ -34,10 +45,15 @@ class MessagePipelineController:
       return "halt"
 
   def process_balance_request(self, message):
-    parsed = re.search("bal", message)
+    parsed = re.search("bal", message.message)
     if parsed == None : return "continue"
     #TODO: Send the current balance, with a suggestion for what to top up
     #TODO: Make no change to the current status
+    return "halt"
+
+  def send_intro_instructions(self, message):
+    if(message.customer.status!="new"): return "continue"
+    self.send_message(message.customer, "This is Grassroots Mobile Power. To add credit to the power strip, text 'ADD 100' to this number.")
     return "halt"
 
   def parse_message_credits(self, message):
@@ -46,8 +62,13 @@ class MessagePipelineController:
     credits = parsed.group(1)
     return credits
 
-  def send_fake_message(self, customer, message):
+  ## if the customer is new and the message isn't a topup request
+  ## then send them information about the service
+
+  def send_message(self, customer, message):
+    #TODO: ACTUALLY SEND THE MESSAGE
+    customer = session.merge(customer)
     outgoing_message = OutgoingMessage(customer = customer, message = message)
-    self.session.add(outgoing_message)
-    self.session.commit()
+    session.add(outgoing_message)
+    session.commit()
 
