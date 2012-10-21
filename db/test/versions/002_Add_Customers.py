@@ -9,6 +9,7 @@ customers = Table(
    Column('msisdn', String(15)),
    Column('created', TIMESTAMP),
    Column('action', String(255)),
+   Column('status_value', String(255)),
    Column('status', String(255))
 )
 

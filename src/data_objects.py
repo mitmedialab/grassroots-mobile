@@ -34,6 +34,7 @@ class Customer(Base):
   created = Column(TIMESTAMP, default=func.now())
   action = Column(String(255))
   status = Column(String(255), default="new")
+  status_value = Column(String(255))
   outgoing_messages = relationship("OutgoingMessage",
                         order_by="desc(OutgoingMessage.created)",
                         primaryjoin = "OutgoingMessage.customer_id==Customer.id")

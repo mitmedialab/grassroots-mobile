@@ -60,6 +60,7 @@ class MessagePipelineControllerTest(unittest.TestCase):
     self.pipeline.process_message(add_credit_message)
     self.assertEqual(outgoing_message_count+1, self.outgoingCount())
     self.assertEqual("You have offered to add 100 credits to the power strip. Confirm by sending \"Yes\"", self.lastSentMessage().message)
+    self.assertEqual("100", self.customers[0].status_value)
     self.assertEqual("topup_offered", self.customers[0].status)
 
     #debug line, for further reference

@@ -28,9 +28,9 @@ class MessagePipelineController:
     credits = self.parse_message_credits(message.message)
     if credits == None: return "continue" #not a topup request
     self.send_message(message.customer, "You have offered to add " + credits + " credits to the power strip. Confirm by sending \"Yes\"")
+    message.customer.status_value = str(credits)
     message.customer.status = "topup_offered"
     session.commit()
-    #TODO: Store the proposed credit value somewhere
     return "halt"
 
   def confirm_topup_request(self, message):
