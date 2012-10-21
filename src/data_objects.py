@@ -4,10 +4,14 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-db = create_engine('sqlite:///db/sqlite/test.db', echo=True)
+db = create_engine('sqlite:///db/sqlite/test.db', echo=False)
 Session = sessionmaker(bind=db)
 Base = declarative_base()
-session = Session()
+
+try:
+  session
+except NameError:
+  session = Session()
 
 class MeterState(Base):
   __tablename__ = 'meter_states'
@@ -30,6 +34,7 @@ class Customer(Base):
   created = Column(TIMESTAMP, default=func.now())
   action = Column(String(255))
   status = Column(String(255), default="new")
+  status_value = Column(String(255))
   outgoing_messages = relationship("OutgoingMessage",
                         order_by="desc(OutgoingMessage.created)",
                         primaryjoin = "OutgoingMessage.customer_id==Customer.id")
@@ -51,6 +56,7 @@ class OutgoingMessage(Base):
   id = Column(Integer, primary_key = True)
   created = Column(TIMESTAMP, default=func.now())
   customer_id = Column(Integer, ForeignKey('customers.id'))
+  message = Column(String(255))
   customer = relationship(Customer, primaryjoin="OutgoingMessage.customer_id == Customer.id")
   handled = Column(Boolean, default = False)
   message_template_id = Column(Integer, ForeignKey('message_templates.id')) #TODO: set up relationships
