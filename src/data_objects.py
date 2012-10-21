@@ -65,10 +65,11 @@ class Consumption(Base):
   consumed_since_last_report = Column(Float)
   session_id = Column(Integer) #TODO: session doesn't exist yet
 
-class ShutoffCommand(Base):
+class SwitchCommand(Base):
   __tablename__ = 'shutoff_commands'
   id = Column(Integer, primary_key = True)
   created = Column(TIMESTAMP, default=func.now())
+  command = Column(String(4))
   handled = Column(Boolean, default = False)
 
 class IncomingMessage(Base):

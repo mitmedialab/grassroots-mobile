@@ -1,0 +1,68 @@
+import serial
+import sys
+from numpy import *
+port = '/dev/ttyUSB0'
+ser = serial.Serial(port, 230400, timeout=5)
+f = open('serlog','w')
+p1 = 0.0732
+p2 = -15.69
+
+class RingArray(object):
+    def __init__(self,size):
+        self.inarray = zeros(size,dtype=int16)
+        self.size = size
+        self.pointer = 0 #This is where the array starts at
+    
+    def insert(self,p):
+        #You insert the element where the array started at, and 
+        #move the pointer one step ahead
+        oldElem = self.inarray[self.pointer]
+        self.inarray[self.pointer] = p
+        self.pointer = (self.pointer + 1)%self.size
+        self.update(oldElem,p)
+
+
+
+class AvgRingArray(RingArray):
+    def __init__(self,size):
+        super(AvgRingArray,self).__init__(size)
+        self.value = 0
+        self.count = 0
+        for i in self.inarray:
+            self.value += float(i)/self.size
+    
+    def scratch(self):
+        self.value = 0
+        for i in self.inarray:
+            self.value += float(i)/self.size
+
+    def update(self,ejectedElem,newElem):
+        #print 'e %d n %d'%(ejectedElem,newElem)
+        self.count += 1
+        if self.count >= 200:
+            self.scratch()
+            self.count = 0
+        else:
+            self.value = float(self.value) - float(ejectedElem)/self.size + float(newElem)/self.size
+
+
+current_bias = AvgRingArray(500)
+voltage_bias = AvgRingArray(500)
+power_avg = AvgRingArray(1200)
+
+while True:
+    line = ser.readline()
+    a =  line.split()
+    if len(a) > 1:
+        current_biased = int(a[0])
+        voltage_biased = int(a[1])
+        voltage_bias.insert(voltage_biased)
+        current_bias.insert(current_biased)
+        voltage_unbiased = voltage_biased-voltage_bias.value
+        current_unbiased = current_biased-current_bias.value
+        power = p1*(abs(voltage_unbiased * current_unbiased))+p2
+        power_avg.insert(power)
+        #print 'i',power
+        print '%0.1fwatts'%(power_avg.value)
+        
+
