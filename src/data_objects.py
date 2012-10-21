@@ -7,6 +7,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 db = create_engine('sqlite:///db/sqlite/test.db', echo=True)
 Session = sessionmaker(bind=db)
 Base = declarative_base()
+session = Session()
 
 class MeterState(Base):
   __tablename__ = 'meter_states'
@@ -15,13 +16,20 @@ class MeterState(Base):
   balance = Column(Float)
   action = Column(String(255))
 
+
+# customer statuses:
+# new: customer created, first message not processed
+# topup_offered:   topup offered, but not confirmed
+# active: topup confirmed and accepted
+# inactive: not part of the current batch of people to be notified
+
 class Customer(Base):
   __tablename__ = 'customers'
   id = Column(Integer, primary_key = True)
   msisdn = Column(String(15))
   created = Column(TIMESTAMP, default=func.now())
   action = Column(String(255))
-  status = Column(String(255))
+  status = Column(String(255), default="new")
   outgoing_messages = relationship("OutgoingMessage",
                         order_by="desc(OutgoingMessage.created)",
                         primaryjoin = "OutgoingMessage.customer_id==Customer.id")
