@@ -8,6 +8,7 @@ outgoing_messages = Table(
    Column('id', Integer, primary_key = True),
    Column('created', TIMESTAMP),
    Column('customer_id', Integer),
+   Column('message', String(255)),
    Column('message_template_id', Integer),
    Column('handled', Boolean, default = False)
 )

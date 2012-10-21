@@ -63,7 +63,7 @@ class Consumption(Base):
   created = Column(TIMESTAMP, default=func.now())
   total_consumed = Column(Float)
   consumed_since_last_report = Column(Float)
-  session = Column(Integer)
+  session_id = Column(Integer) #TODO: session doesn't exist yet
 
 class ShutoffCommand(Base):
   __tablename__ = 'shutoff_commands'

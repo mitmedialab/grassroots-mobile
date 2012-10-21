@@ -6,4 +6,14 @@
 # http://docs.sqlalchemy.org/en/rel_0_7/orm/extensions/declarative.html
 
 #test migrations
-python db/test/manage.py test sqlite:///db/sqlite/test.db --repository db/test
+python db/test/manage.py test 
+
+#to apply migrations
+python db/test/manage.py upgrade
+
+#to rollback migrations
+python db/test/manage.py downgrade 0
+
+#to run tests
+source path.sh
+python tes/run_tests.py
