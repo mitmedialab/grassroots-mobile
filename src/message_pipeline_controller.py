@@ -45,3 +45,9 @@ class MessagePipelineController:
     if parsed == None: return None
     credits = parsed.group(1)
     return credits
+
+  def send_fake_message(self, customer, message):
+    outgoing_message = OutgoingMessage(customer = customer, message = message)
+    self.session.add(outgoing_message)
+    self.session.commit()
+

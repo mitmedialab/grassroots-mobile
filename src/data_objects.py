@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-db = create_engine('sqlite:///db/sqlite/test.db', echo=True)
+db = create_engine('sqlite:///db/sqlite/test.db', echo=False)
 Session = sessionmaker(bind=db)
 Base = declarative_base()
 session = Session()
@@ -51,6 +51,7 @@ class OutgoingMessage(Base):
   id = Column(Integer, primary_key = True)
   created = Column(TIMESTAMP, default=func.now())
   customer_id = Column(Integer, ForeignKey('customers.id'))
+  message = Column(String(255))
   customer = relationship(Customer, primaryjoin="OutgoingMessage.customer_id == Customer.id")
   handled = Column(Boolean, default = False)
   message_template_id = Column(Integer, ForeignKey('message_templates.id')) #TODO: set up relationships
