@@ -4,38 +4,49 @@ import re
 class MessagePipelineController:
 
   def check_messages(self):
+    [self.process_message(msg) for msg in session.query(IncomingMessage).filter_by(handled=False).order_by(asc(IncomingMessage.created))]
     return None
 
   #pipeline items which return "continue" pass through
   #pipeline items which return "halt" halt the queue
   #TODO: mark message as handled
   def process_message(self, message):
-
     status = self.confirm_topup_request(message)
-    if status == "halt": return None
+    if status == "halt": 
+      message.set_handled()
+      return True
 
     status = self.topup_request(message)
-    if status == "halt": return None
+    if status == "halt": 
+      message.set_handled()
+      return True
  
     status = self.process_balance_request(message)
-    if status == "halt": return None
+    if status == "halt": 
+      message.set_handled()
+      return True
  
     status = self.send_intro_instructions(message)
-    if status == "halt": return None
+    if status == "halt": 
+      message.set_handled()
+      return True
 
-    return True
+    return False
 
   def topup_request(self, message):
     credits = self.parse_message_credits(message.message)
     if credits == None: return "continue" #not a topup request
     self.send_message(message.customer, "You have offered to add " + credits + " credits to the power strip. Confirm by sending \"Yes\"")
     message.customer.status_value = str(credits)
-    message.customer.status = "topup_offered"
+    if(message.customer.status == "active"):
+      message.customer.status = "topup_offered_active"
+    else:
+      message.customer.status = "topup_offered_inactive"
     session.commit()
     return "halt"
 
   def confirm_topup_request(self, message):
-    if message.customer.status!="topup_offered": return "continue"
+    if re.search("topup_offered", message.customer.status) == None: return "continue"
     if re.search("[Y|y][E|e][S|s]", message.message):
       latest_meter_state = MeterState.latest()
       status_value = message.customer.status_value
@@ -50,7 +61,9 @@ class MessagePipelineController:
     else:
       self.send_message(message.customer, "Topup successfully declined. To add credit to the power strip, text 'ADD 100' to this number.")
       message.customer.status_value = None
-      session.commit()
+      if(message.customer.status == "topup_offered_active"): message.customer.status = "active"
+      if(message.customer.status == "topup_offered_inactive"): message.customer.status = "inactive"
+
       return "halt"
 
   #only active customers may ask for the current balance

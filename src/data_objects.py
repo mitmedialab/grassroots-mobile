@@ -36,7 +36,8 @@ class MeterState(Base):
 
 # customer statuses:
 # new: customer created, first message not processed
-# topup_offered:   topup offered, but not confirmed
+# topup_offered_inactive:   topup offered, but not confirmed, inactive customer
+# topup_offered_active: topup offered, but not confirmed, active customer
 # active: topup confirmed and accepted
 # inactive: not part of the current batch of people to be notified
 
@@ -115,7 +116,10 @@ class IncomingMessage(Base):
   message = Column(String(255))
   handled = Column(Boolean, default = False)
 
-
+  def set_handled(self):
+    self.handled = True
+    session.add(self)
+    session.commit()
   
 # session = Session()
 # session.query(MeterState).all()

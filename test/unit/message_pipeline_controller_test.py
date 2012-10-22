@@ -1,10 +1,12 @@
 import unittest
 from message_pipeline_controller import *
+from data_objects import *
 import test_common 
+import time
 
 class MessagePipelineControllerTest(unittest.TestCase):
   def setUp(self):
-    self.session = Session()
+    self.session = session
     self.pipeline = MessagePipelineController()
     self.messages = []
     self.outgoing = []
@@ -17,7 +19,7 @@ class MessagePipelineControllerTest(unittest.TestCase):
   #delete all messages and customers created for this test
   def tearDown(self):
     [self.session.delete(message) for message in self.messages]
-    [self.session.delete(customer) for customer in self.customers]
+    [self.session.delete(customer) for customer in self.session.query(Customer).all()]
     [self.session.delete(message) for message in self.session.query(OutgoingMessage).all()]
     [self.session.delete(state) for state in self.session.query(MeterState).all()]
     [self.session.delete(consumption) for consumption in self.session.query(Consumption).all()]
@@ -26,9 +28,6 @@ class MessagePipelineControllerTest(unittest.TestCase):
 
   def outgoingCount(self):
     return len(self.session.query(OutgoingMessage).all())
-
-  def testCheckMessages(self):
-    return None 
 
   def testSendMessage(self):
     outgoing_message_count = self.outgoingCount()
@@ -46,6 +45,26 @@ class MessagePipelineControllerTest(unittest.TestCase):
   def lastSentMessage(self):
     return self.session.query(OutgoingMessage).all()[-1]
 
+  def testCheckMessages(self):
+    self.customers.append(Customer(msisdn="323456789012345", status="new"))
+    self.session.add(self.customers[-1])
+    consumption = Consumption(total_consumed = 50.0, consumed_since_last_report = 20.0)
+    self.session.add(consumption)
+    self.session.commit()
+    messages = []
+   
+
+    messages.append(self.receiveMessage(self.customers[-1], "ADD 100"))
+    time.sleep(1)
+    messages.append(self.receiveMessage(self.customers[-1], "yes"))
+    time.sleep(1)
+    messages.append(self.receiveMessage(self.customers[-1], "bal"))
+
+    self.pipeline.check_messages()
+    [self.session.refresh(msg) for msg in messages]
+    [self.assertTrue(msg.handled) for msg in messages]
+    
+
   def testProcessMessage(self):
     duff_message = self.receiveMessage(self.customers[0], "slartibartfast")
     
@@ -56,6 +75,7 @@ class MessagePipelineControllerTest(unittest.TestCase):
     self.assertEqual(outgoing_message_count+1, self.outgoingCount())
     self.assertEqual("This is Grassroots Mobile Power. To add credit to the power strip, text 'ADD 100' to this number.", self.lastSentMessage().message)
     self.assertEqual(customer_status, self.customers[0].status)
+    self.assertTrue(duff_message.handled)
 
     # receive a new message from a new customer
     outgoing_message_count = self.outgoingCount()
@@ -65,7 +85,8 @@ class MessagePipelineControllerTest(unittest.TestCase):
     self.assertEqual(outgoing_message_count+1, self.outgoingCount())
     self.assertEqual("You have offered to add 100 credits to the power strip. Confirm by sending \"Yes\"", self.lastSentMessage().message)
     self.assertEqual("100", self.customers[0].status_value)
-    self.assertEqual("topup_offered", self.customers[0].status)
+    self.assertEqual("topup_offered_inactive", self.customers[0].status)
+    self.assertTrue(add_credit_message.handled)
 
     # receive positive confirmation
     outgoing_message_count = self.outgoingCount()
@@ -78,6 +99,7 @@ class MessagePipelineControllerTest(unittest.TestCase):
     self.assertEqual("active", self.customers[0].status)
     self.assertEqual("topup", MeterState.latest().action)
     self.assertEqual(100.0, MeterState.latest().balance)
+    self.assertTrue(confirm_credit_message.handled)
 
     # run through a negative topup request
     meter_balance = MeterState.latest().balance
@@ -88,6 +110,7 @@ class MessagePipelineControllerTest(unittest.TestCase):
     self.assertEqual(meter_balance, MeterState.latest().balance)
     self.assertEqual("Topup successfully declined. To add credit to the power strip, text 'ADD 100' to this number.", self.lastSentMessage().message)
     self.assertEqual(None, self.customers[0].status_value)
+    self.assertTrue(add_credit_message.handled)
 
     #Test check Balance
     consumption = Consumption(total_consumed = 50.0, consumed_since_last_report = 20.0)
@@ -100,6 +123,7 @@ class MessagePipelineControllerTest(unittest.TestCase):
     invalid_check_balance = self.receiveMessage(self.customers[-1], "balance")
     self.pipeline.process_message(invalid_check_balance)
     self.assertEqual("Only current customers can check the balance. To add credit to the power strip, text 'ADD 100' to this number.", self.lastSentMessage().message)
+    self.assertTrue(invalid_check_balance.handled)
 
     self.customers[0].status = "active"
     self.session.add(self.customers[0])
@@ -109,6 +133,7 @@ class MessagePipelineControllerTest(unittest.TestCase):
     self.pipeline.process_message(check_balance)
 
     self.assertEqual("Current balance: 50.0 credits remaining. 50.0 kilowatt-minutes used. 50.0 kilowatt-minutes remaining. To add credit to the power strip, text 'ADD 100' to this number.", self.lastSentMessage().message)
+    self.assertTrue(check_balance.handled)
     
     #debug line, for further reference
     #import pdb; pdb.set_trace()
