@@ -36,7 +36,7 @@ class MessagePipelineController:
 
   def confirm_topup_request(self, message):
     if message.customer.status!="topup_offered": return "continue"
-    if re.search("[Y|y]", message.message):
+    if re.search("[Y|y][E|e][S|s]", message.message):
       latest_meter_state = MeterState.latest()
       status_value = message.customer.status_value
       new_balance = latest_meter_state.balance + float(status_value)
@@ -45,9 +45,12 @@ class MessagePipelineController:
       message.customer.status_value = None
       self.send_message(message.customer, "You have added " + status_value + " credits to the power strip.")
       session.commit()
+
       return "halt"
     else:
-      #TODO: maybe send "Top up not confirmed. Try again"
+      self.send_message(message.customer, "Topup declined. To add credit to the power strip, text 'ADD 100' to this number.")
+      message.customer.status_value = None
+      session.commit()
       return "halt"
 
   def process_balance_request(self, message):

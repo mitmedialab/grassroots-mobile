@@ -78,6 +78,17 @@ class MessagePipelineControllerTest(unittest.TestCase):
     self.assertEqual("topup", MeterState.latest().action)
     self.assertEqual(100.0, MeterState.latest().balance)
 
+    # run through a negative topup request
+    meter_balance = MeterState.latest().balance
+    add_credit_message = self.receiveMessage(self.customers[0], "ADD 200")
+    self.pipeline.process_message(add_credit_message)
+    decline_credit_message = self.receiveMessage(self.customers[0], "no you silly bean")
+    self.pipeline.process_message(decline_credit_message)
+    self.assertEqual(meter_balance, MeterState.latest().balance)
+    self.assertEqual("Topup declined. To add credit to the power strip, text 'ADD 100' to this number.", self.lastSentMessage().message)
+    self.assertEqual(None, self.customers[0].status_value)
+    
+
     #debug line, for further reference
     #import pdb; pdb.set_trace()
     return None
