@@ -98,7 +98,7 @@ class MessagePipelineController:
   ## if the customer is new and the message isn't a topup request
   ## then send them information about the service
   ## NOTE: Does not commit the message to the db
-  def send_message(self, customer, message):
+  def send_message(self,customer, message):
     #TODO: ACTUALLY SEND THE MESSAGE
     customer = session.merge(customer)
     outgoing_message = OutgoingMessage(customer = customer, message = message)

@@ -58,8 +58,7 @@ class Customer(Base):
 
   @staticmethod
   def active_customers():
-User.name.in_(['Edwardo', 'fakeuser'])
-    return session.query(Customer).filter_by(Customer.status.in_(['active','topup_offered_active']))
+    return session.query(Customer).filter(Customer.status.in_(['active','topup_offered_active']))
     
 
 class MessageTemplate(Base):

@@ -7,6 +7,7 @@ shutoff_commands = Table(
   'shutoff_commands', meta,
    Column('id', Integer, primary_key = True),
    Column('created', TIMESTAMP),
+   Column('command', String(4)),
    Column('handled', Boolean, default = False)
 )
 

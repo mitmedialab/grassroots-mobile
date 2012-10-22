@@ -3,6 +3,7 @@ ALL_TESTS=[]
 import test_common
 from data_objects_test import *
 from message_pipeline_controller_test import *
+from business_logic_controller_test import *
 
 runner = unittest.TextTestRunner()
 results ={"run":0, "errors":[], "failures":[]}
