@@ -56,6 +56,12 @@ class Customer(Base):
                         order_by="desc(IncomingMessage.created)",
                         primaryjoin = "IncomingMessage.customer_id==Customer.id")
 
+  @staticmethod
+  def active_customers():
+User.name.in_(['Edwardo', 'fakeuser'])
+    return session.query(Customer).filter_by(Customer.status.in_(['active','topup_offered_active']))
+    
+
 class MessageTemplate(Base):
   __tablename__ = 'message_templates'
   id = Column(Integer, primary_key = True)
