@@ -8,6 +8,7 @@ class MessagePipelineController:
 
   #pipeline items which return "continue" pass through
   #pipeline items which return "halt" halt the queue
+  #TODO: mark message as handled
   def process_message(self, message):
 
     status = self.confirm_topup_request(message)
@@ -36,12 +37,17 @@ class MessagePipelineController:
   def confirm_topup_request(self, message):
     if message.customer.status!="topup_offered": return "continue"
     if re.search("[Y|y]", message.message):
-      #TODO: TAKE ACTION TO ADD CREDITS
-      #TODO: Set customer status to "active"
-      #TODO: Send confirmation of topup, including the current balance
+      latest_meter_state = MeterState.latest()
+      status_value = message.customer.status_value
+      new_balance = latest_meter_state.balance + float(status_value)
+      session.add(MeterState(balance=new_balance, action="topup"))
+      message.customer.status = "active"
+      message.customer.status_value = None
+      self.send_message(message.customer, "You have added " + status_value + " credits to the power strip.")
+      session.commit()
       return "halt"
     else:
-      #TODO: send "Top up not confirmed. Try again"
+      #TODO: maybe send "Top up not confirmed. Try again"
       return "halt"
 
   def process_balance_request(self, message):
@@ -54,6 +60,7 @@ class MessagePipelineController:
   def send_intro_instructions(self, message):
     if(message.customer.status!="new"): return "continue"
     self.send_message(message.customer, "This is Grassroots Mobile Power. To add credit to the power strip, text 'ADD 100' to this number.")
+    session.commit()
     return "halt"
 
   def parse_message_credits(self, message):
@@ -64,11 +71,12 @@ class MessagePipelineController:
 
   ## if the customer is new and the message isn't a topup request
   ## then send them information about the service
-
+  ## NOTE: Does not commit the message to the db
   def send_message(self, customer, message):
     #TODO: ACTUALLY SEND THE MESSAGE
     customer = session.merge(customer)
     outgoing_message = OutgoingMessage(customer = customer, message = message)
     session.add(outgoing_message)
     session.commit()
+    return outgoing_message
 

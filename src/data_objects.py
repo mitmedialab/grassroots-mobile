@@ -13,12 +13,25 @@ try:
 except NameError:
   session = Session()
 
+# balance refers to the total balance for that session
+# rather than the balance remaining.
+# Balance Remaining is calculated by combining meter state and consumption
+# == meter states ==
+# topup: credit added
+# shutdown: no credit; meter shut down
+# started: no credit; meter shut down
 class MeterState(Base):
   __tablename__ = 'meter_states'
   id = Column(Integer, primary_key = True)
   created = Column(TIMESTAMP, default=func.now())
   balance = Column(Float)
   action = Column(String(255))
+
+  @staticmethod
+  def latest():
+    state = session.query(MeterState).all()
+    if(len(state) > 0): return state[-1]
+    return None
 
 
 # customer statuses:

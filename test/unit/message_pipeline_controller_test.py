@@ -10,6 +10,8 @@ class MessagePipelineControllerTest(unittest.TestCase):
     self.outgoing = []
     self.customers = [Customer(msisdn="123456789012345", status="new")]
     self.session.add(self.customers[0])
+    self.meter_state = MeterState(balance=0.0, action="started")
+    self.session.add(self.meter_state)
     self.session.commit()
    
   #delete all messages and customers created for this test
@@ -17,6 +19,7 @@ class MessagePipelineControllerTest(unittest.TestCase):
     [self.session.delete(message) for message in self.messages]
     [self.session.delete(customer) for customer in self.customers]
     [self.session.delete(message) for message in self.session.query(OutgoingMessage).all()]
+    [self.session.delete(state) for state in self.session.query(MeterState).all()]
     self.session.commit()
     self.session.close()
 
@@ -62,6 +65,18 @@ class MessagePipelineControllerTest(unittest.TestCase):
     self.assertEqual("You have offered to add 100 credits to the power strip. Confirm by sending \"Yes\"", self.lastSentMessage().message)
     self.assertEqual("100", self.customers[0].status_value)
     self.assertEqual("topup_offered", self.customers[0].status)
+
+    # receive positive confirmation
+    outgoing_message_count = self.outgoingCount()
+    confirm_credit_message = self.receiveMessage(self.customers[0], "yes")
+    self.assertEqual("started", MeterState.latest().action)
+    self.assertEqual(0.0, MeterState.latest().balance)
+    self.pipeline.process_message(confirm_credit_message)
+    self.assertEqual(outgoing_message_count+1, self.outgoingCount())
+    self.assertEqual("You have added 100 credits to the power strip.", self.lastSentMessage().message)
+    self.assertEqual("active", self.customers[0].status)
+    self.assertEqual("topup", MeterState.latest().action)
+    self.assertEqual(100.0, MeterState.latest().balance)
 
     #debug line, for further reference
     #import pdb; pdb.set_trace()
