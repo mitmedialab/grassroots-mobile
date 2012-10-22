@@ -20,6 +20,7 @@ class MessagePipelineControllerTest(unittest.TestCase):
     [self.session.delete(customer) for customer in self.customers]
     [self.session.delete(message) for message in self.session.query(OutgoingMessage).all()]
     [self.session.delete(state) for state in self.session.query(MeterState).all()]
+    [self.session.delete(consumption) for consumption in self.session.query(Consumption).all()]
     self.session.commit()
     self.session.close()
 
@@ -85,10 +86,30 @@ class MessagePipelineControllerTest(unittest.TestCase):
     decline_credit_message = self.receiveMessage(self.customers[0], "no you silly bean")
     self.pipeline.process_message(decline_credit_message)
     self.assertEqual(meter_balance, MeterState.latest().balance)
-    self.assertEqual("Topup declined. To add credit to the power strip, text 'ADD 100' to this number.", self.lastSentMessage().message)
+    self.assertEqual("Topup successfully declined. To add credit to the power strip, text 'ADD 100' to this number.", self.lastSentMessage().message)
     self.assertEqual(None, self.customers[0].status_value)
-    
 
+    #Test check Balance
+    consumption = Consumption(total_consumed = 50.0, consumed_since_last_report = 20.0)
+    self.session.add(consumption)
+    self.customers.append(Customer(msisdn="223456789012345", status="new"))
+    self.session.add(self.customers[-1])
+    self.session.commit()
+
+    #check balance from a new customer: should be declined
+    invalid_check_balance = self.receiveMessage(self.customers[-1], "balance")
+    self.pipeline.process_message(invalid_check_balance)
+    self.assertEqual("Only current customers can check the balance. To add credit to the power strip, text 'ADD 100' to this number.", self.lastSentMessage().message)
+
+    self.customers[0].status = "active"
+    self.session.add(self.customers[0])
+    self.session.commit()
+    self.assertEqual("active", self.customers[0].status)
+    check_balance = self.receiveMessage(self.customers[0], "balance")
+    self.pipeline.process_message(check_balance)
+
+    self.assertEqual("Current balance: 50.0 credits remaining. 50.0 kilowatt-minutes used. 50.0 kilowatt-minutes remaining. To add credit to the power strip, text 'ADD 100' to this number.", self.lastSentMessage().message)
+    
     #debug line, for further reference
     #import pdb; pdb.set_trace()
     return None

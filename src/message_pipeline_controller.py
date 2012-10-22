@@ -48,22 +48,32 @@ class MessagePipelineController:
 
       return "halt"
     else:
-      self.send_message(message.customer, "Topup declined. To add credit to the power strip, text 'ADD 100' to this number.")
+      self.send_message(message.customer, "Topup successfully declined. To add credit to the power strip, text 'ADD 100' to this number.")
       message.customer.status_value = None
       session.commit()
       return "halt"
 
+  #only active customers may ask for the current balance
   def process_balance_request(self, message):
-    parsed = re.search("bal", message.message)
+    parsed = re.search("[B|b][A|a][L|l]", message.message)
     if parsed == None : return "continue"
-    #TODO: Send the current balance, with a suggestion for what to top up
-    #TODO: Make no change to the current status
+    if message.customer.status != "active": 
+      self.send_message(message.customer, "Only current customers can check the balance. To add credit to the power strip, text 'ADD 100' to this number.")
+      return "halt"
+    balance = MeterState.latest().balance
+    consumption = Consumption.latest()
+    kilowatt_minutes_used = consumption.total_consumed
+    credits_used = consumption.credits_used()
+    credits_remaining = balance - credits_used
+    paid_kilowatt_minutes = consumption.credits_to_kilowatt_minutes(balance)
+    kilowatt_minutes_remaining = paid_kilowatt_minutes - kilowatt_minutes_used
+    
+    self.send_message(message.customer, "Current balance: " + str(credits_remaining) + " credits remaining. " + str(kilowatt_minutes_used) + " kilowatt-minutes used. " + str(kilowatt_minutes_remaining) + " kilowatt-minutes remaining. To add credit to the power strip, text 'ADD 100' to this number.")
     return "halt"
 
   def send_intro_instructions(self, message):
     if(message.customer.status!="new"): return "continue"
     self.send_message(message.customer, "This is Grassroots Mobile Power. To add credit to the power strip, text 'ADD 100' to this number.")
-    session.commit()
     return "halt"
 
   def parse_message_credits(self, message):

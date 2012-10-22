@@ -80,9 +80,23 @@ class Consumption(Base):
   __tablename__ = 'consumption'
   id = Column(Integer, primary_key = True)
   created = Column(TIMESTAMP, default=func.now())
-  total_consumed = Column(Float)
+  total_consumed = Column(Float) #kilowatt-minutes
   consumed_since_last_report = Column(Float)
-  session_id = Column(Integer) #TODO: session doesn't exist yet
+  session = Column(Integer) #TODO: session doesn't exist yet
+  kilowatt_minutes_per_credit = 1.0
+
+  @staticmethod
+  def latest():
+    state = session.query(Consumption).all()
+    if(len(state) > 0): return state[-1]
+    return None
+
+  def credits_to_kilowatt_minutes(self,credits):
+    return float(credits) * self.kilowatt_minutes_per_credit
+
+  def credits_used(self):
+    return self.total_consumed / self.kilowatt_minutes_per_credit
+
 
 class SwitchCommand(Base):
   __tablename__ = 'shutoff_commands'
