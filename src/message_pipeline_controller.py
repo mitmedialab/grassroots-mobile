@@ -58,7 +58,7 @@ class MessagePipelineController:
       #TODO: Add a test for this
       #If the power is off, turn it on
       latest_command = SwitchCommand.latest()
-      if(latest_command and latest_command.command=="off"):
+      if(latest_command == None or (latest_command and latest_command.command!="on")):
         session.add(SwitchCommand(command="on"))
 
       session.commit()
