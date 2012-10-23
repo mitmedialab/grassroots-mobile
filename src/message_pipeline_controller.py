@@ -56,6 +56,13 @@ class MessagePipelineController:
       message.customer.status_value = None
       self.send_message(message.customer, "You have added " + status_value + " credits to the power strip.")
       session.commit()
+     
+      #TODO: Add a test for this
+      #If the power is off, turn it on
+      latest_command = SwitchCommand.latest()
+      if(latest_command and latest_command.command=="off"):
+        session.add(SwitchCommand(command="on"))
+        session.commit()
 
       return "halt"
     else:

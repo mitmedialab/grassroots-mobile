@@ -122,6 +122,12 @@ class SwitchCommand(Base):
   command = Column(String(4))
   handled = Column(Boolean, default = False)
 
+  @staticmethod
+  def latest():
+    command = session.query(SwitchCommand).all()
+    if(len(command) > 0): return command[-1]
+    return None
+
 class IncomingMessage(Base):
   __tablename__ = 'incoming_messages'
   id = Column(Integer, primary_key = True)
