@@ -6,6 +6,9 @@ class BusinessLogicController:
   # return true if it takes some kind of action
   def process_consumption_report(self, consumption):
     meter_state = MeterState.latest()
+    #TODO: test the following line
+    # Rule: ignore all consumption reports ecxept in cases where there is credit
+    if(meter_state.action!="topup"): return False
     kilowatt_minutes_funded = consumption.credits_to_kilowatt_minutes(meter_state.balance)
     mpc = MessagePipelineController()
 
