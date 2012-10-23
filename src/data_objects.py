@@ -70,6 +70,7 @@ class MessageTemplate(Base):
                         order_by="desc(MessageTemplate.created)",
                         primaryjoin = "OutgoingMessage.message_template_id==MessageTemplate.id")
 
+
 class OutgoingMessage(Base):
   __tablename__ = 'outgoing_messages'
   id = Column(Integer, primary_key = True)

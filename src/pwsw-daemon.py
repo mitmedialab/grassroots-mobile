@@ -1,6 +1,7 @@
 import serial, sys, time
 from numpy import *
 from data_objects import *
+from business_logic_controller import *
 
 port = '/dev/ttyUSB0'
 ser = serial.Serial(port, 230400, timeout=5)
@@ -71,6 +72,7 @@ power_avg = AvgRingArray(1200)
 dbsession = Session()
 lastttime = None
 
+blc = BusinessLogicController()
 
 while True:
     line = ser.readline()
@@ -126,9 +128,8 @@ while True:
                 dbsession.add(cobj)
                 dbsession.commit()
                 consumed_since_last_report = 0
-                
+                blc.process_consumption_report(cobj)
             
         #print 'i',power
         #print '%0.1fwatts'%(power_avg.value)
         
-

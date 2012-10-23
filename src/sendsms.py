@@ -1,6 +1,6 @@
 import serial, sys
 
-def sendsms(port,text,number):
+def sendsms(port,number,text):
     port = serial.Serial(port, 115200, timeout=2)
     port.flushInput()
     port.flushOutput()
